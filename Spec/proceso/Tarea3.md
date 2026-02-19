@@ -22,7 +22,7 @@ Incluye:
 
 * respuestas 429 controladas
 
-* logging m�ednimo del evento (sin mensaje)
+* logging mínimo del evento (sin mensaje)
 
 ## Entregables
 
