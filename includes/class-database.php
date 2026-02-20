@@ -14,81 +14,77 @@ class RAG_Chatbot_Database {
     /**
     * Crear las tablas personalizadas del plugin
     */
-    public static function create_tables() {
+public static function create_tables() {
     global $wpdb;
 
     $charset_collate = $wpdb->get_charset_collate();
 
-    // Tabla para la base de conocimientos
+    // 1. Tabla para la base de conocimientos
     $table_knowledge = $wpdb->prefix . 'rag_knowledge_base';
-    $sql_knowledge = "CREATE TABLE IF NOT EXISTS $table_knowledge (
-    id bigint(20) NOT NULL AUTO_INCREMENT,
-    question text NOT NULL,
-    answer longtext NOT NULL,
-    category varchar(255) DEFAULT '',
-    source varchar(500) DEFAULT '',
-    source_url varchar(500) DEFAULT '',
-    created_at datetime DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (id),
-    FULLTEXT KEY question_idx (question),
-    KEY category_idx (category)
+    $sql_knowledge = "CREATE TABLE $table_knowledge (
+        id bigint(20) NOT NULL AUTO_INCREMENT,
+        question text NOT NULL,
+        answer longtext NOT NULL,
+        category varchar(255) DEFAULT '',
+        source varchar(500) DEFAULT '',
+        source_url varchar(500) DEFAULT '',
+        created_at datetime DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY  (id),
+        FULLTEXT KEY question_idx (question),
+        KEY category_idx (category)
     ) $charset_collate;";
 
-    // Tabla para las conversaciones (usada como única tabla de interacción)
-    // v2.0: Añadidas columnas session_id, message_buffer, status, updated_at, last_msg_at
+    // 2. Tabla para las conversaciones (IMPORTANTE: session_id está aquí)
+    // Nota: dbDelta requiere exactamente dos espacios después de PRIMARY KEY
     $table_conversations = $wpdb->prefix . 'rag_conversations';
-    $sql_conversations = "CREATE TABLE IF NOT EXISTS $table_conversations (
-    id bigint(20) NOT NULL AUTO_INCREMENT,
-    session_id varchar(100) DEFAULT '',
-    user_message text NOT NULL,
-    message_buffer longtext DEFAULT NULL,
-    bot_response longtext DEFAULT NULL,
-    source varchar(500) DEFAULT '',
-    status varchar(50) DEFAULT 'completed',
-    created_at datetime DEFAULT CURRENT_TIMESTAMP,
-    updated_at datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    last_msg_at datetime DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (id),
-    KEY session_id_idx (session_id),
-    KEY status_idx (status),
-    KEY created_at_idx (created_at),
-    KEY source_idx (source(191))
+    $sql_conversations = "CREATE TABLE $table_conversations (
+        id bigint(20) NOT NULL AUTO_INCREMENT,
+        session_id varchar(100) DEFAULT '',
+        user_message text NOT NULL,
+        message_buffer longtext DEFAULT NULL,
+        bot_response longtext DEFAULT NULL,
+        source varchar(500) DEFAULT '',
+        status varchar(50) DEFAULT 'completed',
+        created_at datetime DEFAULT CURRENT_TIMESTAMP,
+        updated_at datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        last_msg_at datetime DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY  (id),
+        KEY session_id_idx (session_id),
+        KEY status_idx (status),
+        KEY created_at_idx (created_at),
+        KEY source_idx (source(191))
     ) $charset_collate;";
 
-    // Tabla para configuraciones
+    // 3. Tabla para configuraciones
     $table_settings = $wpdb->prefix . 'rag_settings';
-    $sql_settings = "CREATE TABLE IF NOT EXISTS $table_settings (
-    id bigint(20) NOT NULL AUTO_INCREMENT,
-    setting_key varchar(191) NOT NULL,
-    setting_value longtext,
-    updated_at datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    PRIMARY KEY (id),
-    UNIQUE KEY setting_key (setting_key)
+    $sql_settings = "CREATE TABLE $table_settings (
+        id bigint(20) NOT NULL AUTO_INCREMENT,
+        setting_key varchar(191) NOT NULL,
+        setting_value longtext,
+        updated_at datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        PRIMARY KEY  (id),
+        UNIQUE KEY setting_key (setting_key)
     ) $charset_collate;";
 
-    // Tabla para APIs
+    // 4. Tabla para APIs
     $table_apis = $wpdb->prefix . 'rag_apis';
-    $sql_apis = "CREATE TABLE IF NOT EXISTS $table_apis (
-    id bigint(20) NOT NULL AUTO_INCREMENT,
-    name varchar(255) NOT NULL,
-    base_url text NOT NULL,
-    method varchar(10) DEFAULT 'POST',
-    headers longtext,
-    auth longtext,
-    active tinyint(1) DEFAULT 0,
-    PRIMARY KEY (id)
+    $sql_apis = "CREATE TABLE $table_apis (
+        id bigint(20) NOT NULL AUTO_INCREMENT,
+        name varchar(255) NOT NULL,
+        base_url text NOT NULL,
+        method varchar(10) DEFAULT 'POST',
+        headers longtext,
+        auth longtext,
+        active tinyint(1) DEFAULT 0,
+        PRIMARY KEY  (id)
     ) $charset_collate;";
 
-    // NOTA: la tabla rag_logs ha sido deprecada. Ahora usamos rag_conversations para almacenar todas las interacciones.
-    // Si existe rag_logs en instalaciones antiguas, se mantiene para compatibilidad, pero no se creará en nuevas instalaciones.
-
-    require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
-    dbDelta($sql_knowledge);
-    dbDelta($sql_conversations);
-    dbDelta($sql_settings);
-    dbDelta($sql_apis);
-
-    }
+    require_once( ABSPATH . 'wp-admin/includes/upgrade.php' );
+    dbDelta( $sql_knowledge );
+    dbDelta( $sql_conversations );
+    dbDelta( $sql_settings );
+    dbDelta( $sql_apis );
+}
 
     /**
     * Importar datos iniciales desde el archivo JSON
