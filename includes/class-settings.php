@@ -37,45 +37,35 @@ class RAG_Chatbot_Settings {
      * @param array $input Datos crudos del formulario.
      * @return array Datos saneados listos para persistir.
      */
-    public function sanitize_n8n_settings( $input ) {
+    // En includes/class-settings.php
 
-        $clean = array();
+public function sanitize_n8n_settings( $input ) {
+    $clean = array();
+    $existing = get_option( 'rag_chatbot_n8n_settings', array() );
 
-        // URL del webhook n8n — solo URLs válidas con HTTPS
-        if ( ! empty( $input['n8n_webhook_url'] ) ) {
-            $url = esc_url_raw( trim( $input['n8n_webhook_url'] ) );
-            // Rechazar si no es HTTPS
-            if ( strpos( $url, 'https://' ) !== 0 ) {
-                add_settings_error(
-                    'rag_chatbot_n8n_settings',
-                    'invalid_url',
-                    'La URL del webhook debe usar HTTPS.',
-                    'error'
-                );
-                $url = '';
-            }
-            $clean['n8n_webhook_url'] = $url;
+    // 1. URL Webhook
+    $clean['n8n_webhook_url'] = ! empty( $input['n8n_webhook_url'] ) ? esc_url_raw( trim( $input['n8n_webhook_url'] ) ) : '';
+
+    // 2. Token de Agente (Task 1)
+    if ( isset( $input['n8n_agent_token'] ) && $input['n8n_agent_token'] !== '••••••••' ) {
+        $token = sanitize_text_field( trim( $input['n8n_agent_token'] ) );
+        // Validación de seguridad: longitud mínima 32
+        if ( strlen( $token ) >= 32 ) {
+            $clean['n8n_agent_token'] = $token;
         } else {
-            $clean['n8n_webhook_url'] = '';
+            add_settings_error( 'rag_chatbot_n8n_settings', 'token_short', 'El token es demasiado corto (mín. 32 caracteres).', 'error' );
+            $clean['n8n_agent_token'] = $existing['n8n_agent_token'] ?? '';
         }
-
-        // Token de autenticación
-        // Si el usuario envió el placeholder de máscara, conservar el token existente.
-        $existing = get_option( 'rag_chatbot_n8n_settings', array() );
-        if ( isset( $input['n8n_agent_token'] ) && $input['n8n_agent_token'] !== '••••••••' ) {
-            $clean['n8n_agent_token'] = sanitize_text_field( trim( $input['n8n_agent_token'] ) );
-        } else {
-            $clean['n8n_agent_token'] = isset( $existing['n8n_agent_token'] )
-                ? $existing['n8n_agent_token']
-                : '';
-        }
-
-        // Timeout en segundos (entre 5 y 30)
-        $timeout = isset( $input['n8n_timeout'] ) ? intval( $input['n8n_timeout'] ) : 10;
-        $clean['n8n_timeout'] = max( 5, min( 30, $timeout ) );
-
-        return $clean;
+    } else {
+        $clean['n8n_agent_token'] = $existing['n8n_agent_token'] ?? '';
     }
+
+    // 3. Timeout
+    $timeout = isset( $input['n8n_timeout'] ) ? intval( $input['n8n_timeout'] ) : 10;
+    $clean['n8n_timeout'] = max( 5, min( 30, $timeout ) );
+
+    return $clean;
+}
 
     /**
      * Obtener los ajustes de conectividad n8n con valores por defecto.

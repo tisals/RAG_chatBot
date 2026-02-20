@@ -22,6 +22,7 @@ class RAG_Chatbot_Admin {
         add_action('wp_ajax_rag_delete_api', array($this, 'ajax_delete_api'));
         add_action('wp_ajax_rag_test_api', array($this, 'ajax_test_api'));
         add_action('wp_ajax_rag_export_faq', array($this, 'ajax_export_faq'));
+        add_action('wp_ajax_rag_regenerate_token', array($this, 'ajax_regenerate_token'));
     }
     
     /**
@@ -528,5 +529,24 @@ public function ajax_import_faq() {
 
         fclose($output);
         exit; // Muy importante para que no se mezcle nada más en la respuesta
+    }
+    public function ajax_regenerate_token() {
+        check_ajax_referer('rag_chatbot_admin_nonce', 'nonce');
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error(array('message' => 'Permisos insuficientes'));
+        }
+
+        $new_token = wp_generate_password(64, true, true);
+        $settings = get_option('rag_chatbot_n8n_settings', array());
+        $settings['n8n_agent_token'] = $new_token;
+        
+        if (update_option('rag_chatbot_n8n_settings', $settings)) {
+            wp_send_json_success(array(
+                'token' => $new_token,
+                'message' => 'Token regenerado. Actualiza CHATBOT_TOKEN en n8n.'
+            ));
+        } else {
+            wp_send_json_error(array('message' => 'Error al guardar el token.'));
+        }
     }
 }

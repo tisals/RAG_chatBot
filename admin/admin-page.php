@@ -306,30 +306,19 @@ $logs = RAG_Chatbot_Database::get_combined_logs( 200 );
 
                 <!-- Token de autenticación -->
                 <tr>
-                    <th scope="row">
-                        <label for="n8n_agent_token">Token de Autenticación</label>
-                    </th>
+                    <th scope="row">Token de Seguridad (X-WP-Webhook-Token)</th>
                     <td>
-                        <?php
-                        $has_token    = ! empty( $n8n_settings['n8n_agent_token'] );
-                        $token_display = $has_token ? '••••••••' : '';
-                        ?>
-                        <input
-                            type="text"
-                            id="n8n_agent_token"
-                            name="n8n_agent_token"
-                            value="<?php echo esc_attr( $token_display ); ?>"
-                            class="regular-text"
-                            autocomplete="off"
-                            placeholder="<?php echo $has_token ? 'Token guardado (edita para cambiar)' : 'Genera o pega el token aquí'; ?>"
-                            style="width:100%;box-sizing:border-box;"
-                        >
-                        <p class="description">
-                            Se envía en el header <code>X-WP-Webhook-Token</code>.
-                            <?php if ( $has_token ) : ?>
-                                <strong>El token actual está guardado.</strong> Edita el campo solo si quieres cambiarlo.
-                            <?php endif; ?>
-                        </p>
+                        <div style="display: flex; gap: 10px; align-items: center;">
+                            <input type="text" 
+                                id="rag_agent_token_display" 
+                                value="••••••••" 
+                                class="regular-text" 
+                                readonly>
+                            <button type="button" id="rag-regenerate-token" class="button button-secondary">
+                                Regenerar Token
+                            </button>
+                        </div>
+                        <p class="description">Este secreto debe coincidir con la variable <code>CHATBOT_TOKEN</code> en n8n.</p>
                     </td>
                 </tr>
 

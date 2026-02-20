@@ -33,8 +33,8 @@ class RAG_Chatbot_Agent_Connector {
 
         // 3. Preparar el cuerpo de la petición
         $body = array(
-            'message'   => $message,
-            'context'   => $context,
+            'chatInput' => $message, // n8n espera 'chatInput' según tu captura
+            'sessionId' => 'wp_session_' . (get_current_user_id() ?: 'guest_' . substr(md5($_SERVER['REMOTE_ADDR']), 0, 8)),
             'timestamp' => current_time( 'mysql' ),
             'site_url'  => get_site_url(),
         );

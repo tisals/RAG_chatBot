@@ -5,17 +5,29 @@
  */
 
 jQuery(document).ready(function($) {
-    // Manejo de pestañas
-    $('.nav-tab-wrapper a').on('click', function(e) {
-        e.preventDefault();
-        var tab_id = $(this).attr('href');
+// Task 8: Persistencia de pestañas con localStorage
+$('.nav-tab-wrapper a').on('click', function(e) {
+    e.preventDefault();
+    var tab_id = $(this).attr('href');
 
-        $('.nav-tab-wrapper a').removeClass('nav-tab-active');
-        $('.tab-content').hide();
+    $('.nav-tab-wrapper a').removeClass('nav-tab-active');
+    $('.tab-content').hide();
 
-        $(this).addClass('nav-tab-active');
-        $(tab_id).show();
-    });
+    $(this).addClass('nav-tab-active');
+    $(tab_id).show();
+
+    // Guardar estado
+    localStorage.setItem('rag_chatbot_active_tab', tab_id);
+    window.location.hash = tab_id;
+});
+
+// Restaurar pestaña al cargar
+var activeTab = window.location.hash || localStorage.getItem('rag_chatbot_active_tab');
+if (activeTab && $(activeTab).length) {
+    $('.nav-tab-wrapper a[href="' + activeTab + '"]').click();
+} else {
+    $('.nav-tab-wrapper a:first').click();
+}
 
     // Activar la primera pestaña por defecto o la que esté en el hash de la URL
     var hash = window.location.hash;
@@ -267,5 +279,26 @@ $('#knowledge-table').on('click', '.edit-knowledge', function () {
                 }
             });
         }
+    });
+    // AJAX Regenerar Token (Task 1)
+    $('#rag-regenerate-token').on('click', function() {
+        if (!confirm('¿Regenerar el token? La comunicación con n8n se cortará hasta que actualices el nuevo valor allá.')) return;
+
+        var $btn = $(this);
+        $btn.attr('disabled', true).text('Generando...');
+
+        $.post(ragChatbotAdmin.ajax_url, {
+            action: 'rag_regenerate_token',
+            nonce: ragChatbotAdmin.nonce
+        }, function(response) {
+            if (response.success) {
+                alert(response.data.message);
+                // Mostrar temporalmente el token para que lo copien
+                $('#rag_agent_token_display').val(response.data.token);
+            } else {
+                alert('Error: ' + response.data.message);
+            }
+            $btn.attr('disabled', false).text('Regenerar Token');
+        });
     });
 });

@@ -98,7 +98,7 @@ Fuera de alcance:
 
     * primeros 200–500 chars de respuesta si necesitas (sin datos sensibles)
 
-## C�f3mo probar
+## Cómo probar
 
 * Con token configurado correcto:
 
