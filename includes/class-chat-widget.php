@@ -115,17 +115,16 @@ class RAG_Chatbot_Widget {
      * Flujo: pregunta → log pending → n8n → (fallback KB) → log completed → respuesta
      */
     public function handle_ajax_message() {
-
-        // 1. Verificar nonce (CSRF)
+    // 1. Verificar nonce (CSRF) - Baseline 5.3
         check_ajax_referer( 'rag_chatbot_nonce', 'nonce' );
 
-        // 2. Rate Limiting
+        // 2. Ejecutar Rate Limit (Task 3)
         if ( ! $this->check_rate_limit() ) {
             wp_send_json(
                 array(
                     'success' => false,
                     'data'    => array(
-                        'message' => 'Demasiadas consultas. Por favor espera un momento.',
+                        'message' => 'Has enviado demasiados mensajes en poco tiempo, por favor espera un momento.',
                         'code'    => 429,
                     ),
                 ),
@@ -226,21 +225,37 @@ class RAG_Chatbot_Widget {
      *
      * @return bool TRUE si está dentro del límite.
      */
+    /**
+ * Implementación de Rate Limiting (Task 3 / Baseline 4.3)
+ */
     private function check_rate_limit() {
-        $max_requests   = 10;
-        $window_seconds = 60;
-        $ip             = $this->get_client_ip();
-        $key            = 'rag_rl_' . md5( $ip );
-        $count          = (int) get_transient( $key );
+        // 1. Obtener ajustes (o usar valores por defecto de la SPEC)
+        $max_requests   = 10; // Mensajes permitidos
+        $window_seconds = 60; // Ventana de tiempo (1 minuto)
+        
+        // 2. Obtener identificador único por IP (ya sanitizado en tu clase)
+        $ip = $this->get_client_ip();
+        
+        // 3. Clave canónica según TECH_SPEC.md
+        $transient_key = 'tis_chatbot_rate_' . md5( $ip );
+        
+        // 4. Consultar contador actual
+        $current_count = (int) get_transient( $transient_key );
 
-        if ( $count >= $max_requests ) {
+        // 5. Validar umbral
+        if ( $current_count >= $max_requests ) {
+            // Log de seguridad (Baseline 5.4 - Sin PII)
+            error_log( "[TIS-Chatbot] Rate limit excedido para IP_HASH: " . md5($ip) );
             return false;
         }
 
-        if ( $count === 0 ) {
-            set_transient( $key, 1, $window_seconds );
+        // 6. Incrementar y persistir
+        if ( $current_count === 0 ) {
+            set_transient( $transient_key, 1, $window_seconds );
         } else {
-            set_transient( $key, $count + 1, $window_seconds );
+            // Mantener el tiempo de vida restante del transient original
+            // WordPress no incrementa transients nativamente, así que actualizamos el valor
+            set_transient( $transient_key, $current_count + 1, $window_seconds );
         }
 
         return true;
